@@ -7,10 +7,8 @@ import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
 import com.pandulapeter.campfire.feature.main.options.preferences.PreferencesViewModel
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class WelcomeViewModel : CampfireViewModel() {
-    private val preferenceDatabase by inject<PreferenceDatabase>()
+class WelcomeViewModel(private val preferenceDatabase: PreferenceDatabase) : CampfireViewModel() {
     val shouldShowThemeSelector = ObservableBoolean()
     val shouldShowLanguageSelector = ObservableBoolean()
     val language = ObservableField<PreferencesViewModel.Language>(PreferencesViewModel.Language.fromId(preferenceDatabase.language))

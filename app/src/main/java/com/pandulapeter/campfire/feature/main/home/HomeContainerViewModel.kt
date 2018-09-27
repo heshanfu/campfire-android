@@ -5,13 +5,12 @@ import com.pandulapeter.campfire.data.repository.CollectionRepository
 import com.pandulapeter.campfire.data.repository.SongRepository
 import com.pandulapeter.campfire.feature.CampfireActivity
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
-import org.koin.android.ext.android.inject
 
-class HomeContainerViewModel : CampfireViewModel() {
-
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    private val collectionRepository by inject<CollectionRepository>()
-    private val songRepository by inject<SongRepository>()
+class HomeContainerViewModel(
+    preferenceDatabase: PreferenceDatabase,
+    collectionRepository: CollectionRepository,
+    songRepository: SongRepository
+) : CampfireViewModel() {
 
     init {
         preferenceDatabase.lastScreen = CampfireActivity.SCREEN_HOME

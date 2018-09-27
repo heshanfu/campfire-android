@@ -5,13 +5,30 @@ import android.databinding.ObservableBoolean
 import android.databinding.ObservableInt
 import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.data.model.remote.Song
+import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
+import com.pandulapeter.campfire.data.repository.PlaylistRepository
+import com.pandulapeter.campfire.data.repository.SongDetailRepository
+import com.pandulapeter.campfire.data.repository.SongRepository
 import com.pandulapeter.campfire.feature.CampfireActivity
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.BaseSongListViewModel
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.SongListItemViewModel
 import com.pandulapeter.campfire.integration.AnalyticsManager
 
-class ManageDownloadsViewModel(context: Context, private val openSongs: () -> Unit) : BaseSongListViewModel(context) {
-
+class ManageDownloadsViewModel(
+    context: Context,
+    songRepository: SongRepository,
+    songDetailRepository: SongDetailRepository,
+    preferenceDatabase: PreferenceDatabase,
+    playlistRepository: PlaylistRepository,
+    analyticsManager: AnalyticsManager
+) : BaseSongListViewModel(
+    context,
+    songRepository,
+    songDetailRepository,
+    preferenceDatabase,
+    playlistRepository,
+    analyticsManager
+) {
     val shouldShowDeleteAll = ObservableBoolean()
     val songCount = ObservableInt()
     private var songToDeleteId: String? = null
@@ -26,7 +43,15 @@ class ManageDownloadsViewModel(context: Context, private val openSongs: () -> Un
 
     override fun Sequence<Song>.createViewModels() = filter { songDetailRepository.isSongDownloaded(it.id) }
         .filter { it.id != songToDeleteId }
-        .map { SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it) }
+        .map {
+            SongListItemViewModel.SongViewModel(
+                newVersionText = newVersionText,
+                newTagText = newTagText,
+                songDetailRepository = songDetailRepository,
+                playlistRepository = playlistRepository,
+                song = it
+            )
+        }
         .toList()
 
     override fun onListUpdated(items: List<SongListItemViewModel>) {

@@ -18,6 +18,7 @@ import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.integration.FirstTimeUserExperienceManager
 import com.pandulapeter.campfire.util.*
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class ManagePlaylistsFragment : TopLevelFragment<FragmentManagePlaylistsBinding, ManagePlaylistsViewModel>(R.layout.fragment_manage_playlists),
     BaseDialogFragment.OnDialogItemSelectedListener {
@@ -26,7 +27,7 @@ class ManagePlaylistsFragment : TopLevelFragment<FragmentManagePlaylistsBinding,
         private const val DIALOG_ID_DELETE_ALL_CONFIRMATION = 6
     }
 
-    override val viewModel = ManagePlaylistsViewModel()
+    override val viewModel by viewModel<ManagePlaylistsViewModel>()
     private val firstTimeUserExperienceManager by inject<FirstTimeUserExperienceManager>()
     private val deleteAllButton by lazy {
         getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_delete_24dp) {

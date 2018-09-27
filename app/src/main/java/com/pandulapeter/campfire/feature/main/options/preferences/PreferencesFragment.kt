@@ -1,5 +1,7 @@
 package com.pandulapeter.campfire.feature.main.options.preferences
 
+import android.os.Bundle
+import android.view.View
 import com.crashlytics.android.Crashlytics
 import com.pandulapeter.campfire.BuildConfig
 import com.pandulapeter.campfire.R
@@ -10,6 +12,7 @@ import com.pandulapeter.campfire.feature.shared.dialog.BaseDialogFragment
 import com.pandulapeter.campfire.util.onEventTriggered
 import com.pandulapeter.campfire.util.onPropertyChanged
 import io.fabric.sdk.android.Fabric
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class PreferencesFragment : CampfireFragment<FragmentOptionsPreferencesBinding, PreferencesViewModel>(R.layout.fragment_options_preferences),
     BaseDialogFragment.OnDialogItemSelectedListener,
@@ -20,8 +23,11 @@ class PreferencesFragment : CampfireFragment<FragmentOptionsPreferencesBinding, 
         private const val DIALOG_ID_RESET_HINTS_CONFIRMATION = 3
     }
 
-    override val viewModel by lazy {
-        PreferencesViewModel(getCampfireActivity()).apply {
+    override val viewModel by viewModel<PreferencesViewModel>()
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.apply {
+            getString = { this@PreferencesFragment.getString(it) }
             shouldShowThemeSelector.onEventTriggered {
                 if (!getCampfireActivity().isUiBlocked) {
                     theme.get()?.let { ThemeSelectorBottomSheetFragment.show(childFragmentManager, it.id) }
@@ -63,6 +69,8 @@ class PreferencesFragment : CampfireFragment<FragmentOptionsPreferencesBinding, 
                 }
             }
             shouldShowHintsResetSnackbar.onEventTriggered(this@PreferencesFragment) { showSnackbar(R.string.options_preferences_reset_hints_message) }
+            updateThemeDescription()
+            updateLanguageDescription()
         }
     }
 

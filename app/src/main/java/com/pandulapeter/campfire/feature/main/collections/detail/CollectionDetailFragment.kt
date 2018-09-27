@@ -15,6 +15,7 @@ import com.pandulapeter.campfire.util.BundleArgumentDelegate
 import com.pandulapeter.campfire.util.animatedDrawable
 import com.pandulapeter.campfire.util.visibleOrGone
 import com.pandulapeter.campfire.util.withArguments
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class CollectionDetailFragment : BaseSongListFragment<CollectionDetailViewModel>() {
 
@@ -26,12 +27,7 @@ class CollectionDetailFragment : BaseSongListFragment<CollectionDetailViewModel>
         }
     }
 
-    override val viewModel by lazy {
-        CollectionDetailViewModel(
-            getCampfireActivity(),
-            (arguments?.collection as? Collection) ?: throw IllegalStateException("No Collection specified.")
-        ) { shuffleButton.visibleOrGone = true }
-    }
+    override val viewModel by viewModel<CollectionDetailViewModel>()
     private val shuffleButton: ToolbarButton by lazy {
         getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_shuffle_24dp) { shuffleSongs(AnalyticsManager.PARAM_VALUE_SCREEN_COLLECTION_DETAIL) }
             .apply { visibleOrGone = false }
@@ -90,6 +86,8 @@ class CollectionDetailFragment : BaseSongListFragment<CollectionDetailViewModel>
                 )
             }
         }
+        viewModel.onDataLoaded = { shuffleButton.visibleOrGone = true }
+        viewModel.currentCollection = (arguments?.collection as? Collection) ?: throw IllegalStateException("No Collection specified.")
     }
 
     override fun onResume() {

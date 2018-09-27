@@ -13,6 +13,7 @@ import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.BundleArgumentDelegate
 import com.pandulapeter.campfire.util.addPageScrollListener
 import com.pandulapeter.campfire.util.withArguments
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class OptionsFragment : TopLevelFragment<FragmentOptionsBinding, OptionsViewModel>(R.layout.fragment_options) {
 
@@ -22,7 +23,7 @@ class OptionsFragment : TopLevelFragment<FragmentOptionsBinding, OptionsViewMode
         fun newInstance(shouldOpenChangelog: Boolean) = OptionsFragment().withArguments { it.shouldOpenChangelog = shouldOpenChangelog }
     }
 
-    override val viewModel = OptionsViewModel()
+    override val viewModel by viewModel<OptionsViewModel>()
     override val appBarView: TabLayout by lazy {
         DataBindingUtil.inflate<ViewOptionsTabsBinding>(
             LayoutInflater.from(getCampfireActivity().toolbarContext), R.layout.view_options_tabs, null, false

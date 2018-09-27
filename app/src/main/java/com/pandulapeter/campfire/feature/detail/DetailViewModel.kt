@@ -6,13 +6,14 @@ import com.pandulapeter.campfire.data.repository.PlaylistRepository
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class DetailViewModel(private val updatePlaylistIcon: (Boolean) -> Unit) : CampfireViewModel(), PlaylistRepository.Subscriber {
+class DetailViewModel(
+    private val playlistRepository: PlaylistRepository,
+    private val analyticsManager: AnalyticsManager
+) : CampfireViewModel(), PlaylistRepository.Subscriber {
 
-    private val playlistRepository by inject<PlaylistRepository>()
-    private val analyticsManager by inject<AnalyticsManager>()
     val songId = ObservableField("")
+    lateinit var updatePlaylistIcon: (Boolean) -> Unit
 
     init {
         songId.onPropertyChanged { updatePlaylistIconState() }

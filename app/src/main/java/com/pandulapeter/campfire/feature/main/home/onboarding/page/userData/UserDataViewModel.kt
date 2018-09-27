@@ -5,12 +5,12 @@ import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class UserDataViewModel : CampfireViewModel() {
+class UserDataViewModel(
+    private val preferenceDatabase: PreferenceDatabase,
+    private val analyticsManager: AnalyticsManager
+) : CampfireViewModel() {
 
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    private val analyticsManager by inject<AnalyticsManager>()
     val isAnalyticsEnabled = ObservableBoolean(preferenceDatabase.shouldShareUsageData)
     val isCrashReportingEnabled = ObservableBoolean(preferenceDatabase.shouldShareCrashReports)
 

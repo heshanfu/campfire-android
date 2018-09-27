@@ -7,12 +7,11 @@ import com.pandulapeter.campfire.data.model.remote.Song
 import com.pandulapeter.campfire.databinding.FragmentDetailPageBinding
 import com.pandulapeter.campfire.feature.detail.DetailEventBus
 import com.pandulapeter.campfire.feature.detail.DetailFragment
-import com.pandulapeter.campfire.feature.detail.page.parsing.SongParser
 import com.pandulapeter.campfire.feature.shared.CampfireFragment
 import com.pandulapeter.campfire.util.BundleArgumentDelegate
-import com.pandulapeter.campfire.util.dimension
 import com.pandulapeter.campfire.util.withArguments
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 import kotlin.math.roundToInt
 
 class DetailPageFragment : CampfireFragment<FragmentDetailPageBinding, DetailPageViewModel>(R.layout.fragment_detail_page), DetailEventBus.Subscriber {
@@ -30,17 +29,12 @@ class DetailPageFragment : CampfireFragment<FragmentDetailPageBinding, DetailPag
     private var isContentVisible = false
     private val detailEventBus by inject<DetailEventBus>()
     private var smoothScrollHolder = 0f
-    override val viewModel by lazy {
-        DetailPageViewModel(
-            song = song,
-            initialTextSize = getCampfireActivity().dimension(R.dimen.text_normal),
-            songParser = SongParser(getCampfireActivity()),
-            onDataLoaded = { (parentFragment as? DetailFragment)?.onDataLoaded(song.id) }
-        )
-    }
+    override val viewModel by viewModel<DetailPageViewModel>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         savedInstanceState?.let { isContentVisible = it.isContentVisible }
+        viewModel.song = song
+        viewModel.onDataLoaded = { (parentFragment as? DetailFragment)?.onDataLoaded(song.id) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -83,7 +77,7 @@ class DetailPageFragment : CampfireFragment<FragmentDetailPageBinding, DetailPag
     }
 
     override fun scroll(songId: String, speed: Int) {
-        if (viewModel.song.id == songId) {
+        if (viewModel.song?.id == songId) {
             smoothScrollHolder += (1 + speed) / 5f
             while (smoothScrollHolder > 1) {
                 binding.scrollView.scrollY += smoothScrollHolder.roundToInt()

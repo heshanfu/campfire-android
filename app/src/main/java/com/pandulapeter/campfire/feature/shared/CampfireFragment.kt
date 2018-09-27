@@ -49,10 +49,10 @@ abstract class CampfireFragment<B : ViewDataBinding, out VM : CampfireViewModel>
     private val snackbarActionTextColor by lazy { getCampfireActivity().color(R.color.accent) }
 
     final override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        viewModel.componentCallbacks = this
         binding = DataBindingUtil.inflate(inflater, layoutResourceId, container, false)
         binding.setVariable(BR.viewModel, viewModel)
         binding.executePendingBindings()
+        binding.setLifecycleOwner(this)
         return binding.root
     }
 
@@ -121,11 +121,6 @@ abstract class CampfireFragment<B : ViewDataBinding, out VM : CampfireViewModel>
         isResumingDelayed = false
         snackbar?.dismiss()
         viewModel.unsubscribe()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        viewModel.componentCallbacks = null
     }
 
     override fun setReenterTransition(transition: Any?) {

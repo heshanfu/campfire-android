@@ -5,10 +5,8 @@ import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.util.generateNotationExample
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class SongAppearanceViewModel : CampfireViewModel() {
-    private val preferenceDatabase by inject<PreferenceDatabase>()
+class SongAppearanceViewModel(private val preferenceDatabase: PreferenceDatabase) : CampfireViewModel() {
     private var areListenersSet = false
     val englishNotationExample = generateNotationExample(false)
     val germanNotationExample = generateNotationExample(true)

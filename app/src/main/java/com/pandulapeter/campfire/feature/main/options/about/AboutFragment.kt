@@ -1,28 +1,18 @@
 package com.pandulapeter.campfire.feature.main.options.about
 
 import android.animation.ObjectAnimator
+import android.arch.lifecycle.Observer
+import android.os.Bundle
 import android.util.Property
 import android.view.View
 import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.databinding.FragmentOptionsAboutBinding
 import com.pandulapeter.campfire.feature.shared.CampfireFragment
-import com.pandulapeter.campfire.util.onEventTriggered
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class AboutFragment : CampfireFragment<FragmentOptionsAboutBinding, AboutViewModel>(R.layout.fragment_options_about) {
 
-    override val viewModel by lazy {
-        AboutViewModel { getCampfireActivity().isUiBlocked }.apply {
-            shouldShowErrorShowSnackbar.onEventTriggered(this@AboutFragment) { showSnackbar(R.string.options_about_error) }
-            shouldShowWorkInProgressSnackbar.onEventTriggered(this@AboutFragment) { showSnackbar(R.string.options_about_no_in_app_purchase) }
-            shouldShowNoEasterEggSnackbar.onEventTriggered(this@AboutFragment) {
-                ObjectAnimator
-                    .ofFloat(binding.logo, scale, 1f, 1.5f, 0.5f, 1.25f, 0.75f, 1.1f, 0.9f, 1f)
-                    .setDuration(800)
-                    .start()
-            }
-            shouldBlockUi.onEventTriggered { getCampfireActivity().isUiBlocked = true }
-        }
-    }
+    override val viewModel by viewModel<AboutViewModel>()
     private val scale by lazy {
         object : Property<View, Float>(Float::class.java, "scale") {
 
@@ -34,6 +24,21 @@ class AboutFragment : CampfireFragment<FragmentOptionsAboutBinding, AboutViewMod
             }
 
             override fun get(view: View) = view.scaleX
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.isUiBlocked = { getCampfireActivity().isUiBlocked }
+        viewModel.apply {
+            shouldShowErrorShowSnackbar.observe(viewLifecycleOwner, Observer { showSnackbar(R.string.options_about_error) })
+            shouldShowWorkInProgressSnackbar.observe(viewLifecycleOwner, Observer { showSnackbar(R.string.options_about_no_in_app_purchase) })
+            shouldShowNoEasterEggSnackbar.observe(viewLifecycleOwner, Observer {
+                ObjectAnimator
+                    .ofFloat(binding.logo, scale, 1f, 1.5f, 0.5f, 1.25f, 0.75f, 1.1f, 0.9f, 1f)
+                    .setDuration(800)
+                    .start()
+            })
+            shouldBlockUi.observe(viewLifecycleOwner, Observer { getCampfireActivity().isUiBlocked = true })
         }
     }
 }

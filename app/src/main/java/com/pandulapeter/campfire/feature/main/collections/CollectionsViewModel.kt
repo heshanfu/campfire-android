@@ -1,5 +1,6 @@
 package com.pandulapeter.campfire.feature.main.collections
 
+import android.content.Context
 import android.databinding.ObservableBoolean
 import android.databinding.ObservableField
 import android.databinding.ObservableInt
@@ -19,19 +20,16 @@ import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.cancel
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.withContext
-import org.koin.android.ext.android.inject
 import kotlin.coroutines.experimental.CoroutineContext
 
 class CollectionsViewModel(
-    private val onDataLoaded: (languages: List<Language>) -> Unit,
-    private val openSecondaryNavigationDrawer: () -> Unit,
-    private val newText: String
+    context: Context,
+    private val preferenceDatabase: PreferenceDatabase,
+    val collectionRepository: CollectionRepository,
+    private val analyticsManager: AnalyticsManager
 ) : CampfireViewModel(), CollectionRepository.Subscriber {
 
     var isDetailScreenOpen = false
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    val collectionRepository by inject<CollectionRepository>()
-    private val analyticsManager by inject<AnalyticsManager>()
     private var coroutine: CoroutineContext? = null
     private var collections = sequenceOf<Collection>()
     val state = ObservableField<StateLayout.State>(StateLayout.State.LOADING)
@@ -41,6 +39,9 @@ class CollectionsViewModel(
     val buttonText = ObservableInt(R.string.try_again)
     val buttonIcon = ObservableInt()
     val adapter = CollectionListAdapter()
+    private val newText = context.getString(R.string.new_tag)
+    lateinit var onDataLoaded: (languages: List<Language>) -> Unit
+    lateinit var openSecondaryNavigationDrawer: () -> Unit
 
     var sortingMode = SortingMode.fromIntValue(preferenceDatabase.collectionsSortingMode)
         set(value) {

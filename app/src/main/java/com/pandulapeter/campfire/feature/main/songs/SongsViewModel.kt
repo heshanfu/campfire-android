@@ -5,6 +5,10 @@ import android.databinding.ObservableBoolean
 import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.data.model.local.Language
 import com.pandulapeter.campfire.data.model.remote.Song
+import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
+import com.pandulapeter.campfire.data.repository.PlaylistRepository
+import com.pandulapeter.campfire.data.repository.SongDetailRepository
+import com.pandulapeter.campfire.data.repository.SongRepository
 import com.pandulapeter.campfire.feature.CampfireActivity
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.BaseSongListViewModel
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.SongListItemViewModel
@@ -14,19 +18,24 @@ import com.pandulapeter.campfire.util.normalize
 import com.pandulapeter.campfire.util.onTextChanged
 import com.pandulapeter.campfire.util.removePrefixes
 import com.pandulapeter.campfire.util.swap
-import org.koin.android.ext.android.inject
 
 class SongsViewModel(
     context: Context,
-    val toolbarTextInputView: ToolbarTextInputView,
-    private val updateSearchToggleDrawable: (Boolean) -> Unit,
-    private val onDataLoaded: (languages: List<Language>) -> Unit,
-    private val openSecondaryNavigationDrawer: () -> Unit,
-    private val setFastScrollEnabled: (Boolean) -> Unit
-) : BaseSongListViewModel(context) {
+    songRepository: SongRepository,
+    songDetailRepository: SongDetailRepository,
+    preferenceDatabase: PreferenceDatabase,
+    playlistRepository: PlaylistRepository,
+    analyticsManager: AnalyticsManager
+) : BaseSongListViewModel(
+    context,
+    songRepository,
+    songDetailRepository,
+    preferenceDatabase,
+    playlistRepository,
+    analyticsManager
+) {
 
     override val screenName = AnalyticsManager.PARAM_VALUE_SCREEN_SONGS
-    private val analyticsManager by inject<AnalyticsManager>()
     private val popularString = context.getString(R.string.popular_tag)
     private val newString = context.getString(R.string.new_tag)
     val shouldShowEraseButton = ObservableBoolean()
@@ -86,10 +95,19 @@ class SongsViewModel(
             trackSearchEvent()
         }
 
-    init {
-        toolbarTextInputView.apply {
-            textInput.onTextChanged { if (isTextInputVisible) query = it }
+    var toolbarTextInputView: ToolbarTextInputView? = null
+        set(value) {
+            field = value
+            if (value != null) {
+                value.textInput.onTextChanged { if (value.isTextInputVisible) query = it }
+            }
         }
+    lateinit var updateSearchToggleDrawable: (Boolean) -> Unit
+    lateinit var onDataLoaded: (languages: List<Language>) -> Unit
+    lateinit var openSecondaryNavigationDrawer: () -> Unit
+    lateinit var setFastScrollEnabled: (Boolean) -> Unit
+
+    init {
         preferenceDatabase.lastScreen = CampfireActivity.SCREEN_SONGS
         adapter.itemTitleCallback = {
             adapter.items[it].let {
@@ -117,7 +135,7 @@ class SongsViewModel(
         super.onListUpdated(items)
         if (songs.toList().isNotEmpty()) {
             placeholderText.set(R.string.songs_placeholder)
-            buttonText.set(if (toolbarTextInputView.isTextInputVisible) 0 else R.string.filters)
+            buttonText.set(if (toolbarTextInputView?.isTextInputVisible == true) 0 else R.string.filters)
             buttonIcon.set(R.drawable.ic_filter_and_sort_24dp)
             setFastScrollEnabled(sortingMode != SortingMode.POPULARITY)
         }
@@ -136,7 +154,15 @@ class SongsViewModel(
         .filterByLanguage()
         .filterExplicit()
         .sort()
-        .map { SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it) }
+        .map {
+            SongListItemViewModel.SongViewModel(
+                newVersionText = newVersionText,
+                newTagText = newTagText,
+                songDetailRepository = songDetailRepository,
+                playlistRepository = playlistRepository,
+                song = it
+            )
+        }
         .toMutableList<SongListItemViewModel>()
         .apply {
             val headerIndices = mutableListOf<Int>()
@@ -176,25 +202,25 @@ class SongsViewModel(
     }
 
     fun toggleTextInputVisibility() {
-        toolbarTextInputView.run {
+        toolbarTextInputView?.run {
             if (title.tag == null) {
                 val shouldScrollToTop = !query.isEmpty()
                 animateTextInputVisibility(!isTextInputVisible)
                 if (isTextInputVisible) {
                     textInput.setText("")
                 }
-                updateSearchToggleDrawable(toolbarTextInputView.isTextInputVisible)
+                updateSearchToggleDrawable(isTextInputVisible)
                 if (shouldScrollToTop) {
                     updateAdapterItems(!isTextInputVisible)
                 }
-                buttonText.set(if (toolbarTextInputView.isTextInputVisible) 0 else R.string.filters)
+                buttonText.set(if (isTextInputVisible) 0 else R.string.filters)
             }
             shouldShowEraseButton.set(isTextInputVisible)
         }
     }
 
     //TODO: Prioritize results that begin with the searchQuery.
-    private fun Sequence<Song>.filterByQuery() = if (toolbarTextInputView.isTextInputVisible) {
+    private fun Sequence<Song>.filterByQuery() = if (toolbarTextInputView?.isTextInputVisible == true) {
         query.trim().normalize().let { query ->
             filter {
                 (it.getNormalizedTitle().contains(query, true) && shouldSearchInTitles) || (it.getNormalizedArtist().contains(query, true) && shouldSearchInArtists)

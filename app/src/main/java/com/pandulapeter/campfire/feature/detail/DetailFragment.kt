@@ -27,6 +27,7 @@ import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.integration.FirstTimeUserExperienceManager
 import com.pandulapeter.campfire.util.*
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 import java.net.URLEncoder
 
 
@@ -51,15 +52,7 @@ class DetailFragment : TopLevelFragment<FragmentDetailBinding, DetailViewModel>(
         }
     }
 
-    override val viewModel by lazy {
-        var isAddedToPlaylist: Boolean? = null
-        DetailViewModel {
-            if (isAddedToPlaylist != null && isAddedToPlaylist != it) {
-                playlistButton.setImageDrawable((if (it) addedToPlaylist else removedFromPlaylist)?.apply { start() })
-            }
-            isAddedToPlaylist = it
-        }
-    }
+    override val viewModel by viewModel<DetailViewModel>()
     private val pagerAdapter by lazy { DetailPagerAdapter(childFragmentManager, songs) }
     private val historyRepository by inject<HistoryRepository>()
     private val songRepository by inject<SongRepository>()
@@ -76,6 +69,7 @@ class DetailFragment : TopLevelFragment<FragmentDetailBinding, DetailViewModel>(
     private val transposeLower by lazy { getCampfireActivity().secondaryNavigationMenu.findItem(R.id.transpose_lower) }
     private var isPinchHintVisible = false
     private val transposeContainer by lazy { getCampfireActivity().secondaryNavigationMenu.findItem(R.id.transpose_container) }
+    private var isAddedToPlaylist: Boolean? = null
     private val playlistButton: ToolbarButton by lazy {
         getCampfireActivity().toolbarContext.createToolbarButton(if (viewModel.isSongInAnyPlaylists()) R.drawable.ic_playlist_24dp else R.drawable.ic_playlist_border_24dp) {
             if (viewModel.areThereMoreThanOnePlaylists()) {
@@ -118,6 +112,13 @@ class DetailFragment : TopLevelFragment<FragmentDetailBinding, DetailViewModel>(
         postponeEnterTransition()
         super.onViewCreated(view, savedInstanceState)
         analyticsManager.onSongDetailScreenOpened(songs.size)
+        viewModel.updatePlaylistIcon = {
+            if (isAddedToPlaylist != null && isAddedToPlaylist != it) {
+                playlistButton.setImageDrawable((if (it) addedToPlaylist else removedFromPlaylist)?.apply { start() })
+            }
+            isAddedToPlaylist = it
+        }
+        viewModel.updatePlaylistIcon
         getCampfireActivity().updateFloatingActionButtonDrawable(getCampfireActivity().drawable(R.drawable.ic_play_24dp))
         getCampfireActivity().autoScrollControl.visibleOrGone = false
         if (savedInstanceState != null) {

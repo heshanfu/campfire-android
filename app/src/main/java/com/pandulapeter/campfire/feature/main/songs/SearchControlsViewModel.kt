@@ -4,11 +4,9 @@ import android.databinding.ObservableBoolean
 import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class SearchControlsViewModel : CampfireViewModel() {
+class SearchControlsViewModel(private val preferenceDatabase: PreferenceDatabase) : CampfireViewModel() {
 
-    private val preferenceDatabase by inject<PreferenceDatabase>()
     val isVisible = ObservableBoolean()
     val searchInArtists = ObservableBoolean(preferenceDatabase.shouldSearchInArtists)
     val searchInTitles = ObservableBoolean(preferenceDatabase.shouldSearchInTitles)

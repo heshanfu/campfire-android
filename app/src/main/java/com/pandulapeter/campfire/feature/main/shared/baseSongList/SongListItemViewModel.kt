@@ -1,7 +1,5 @@
 package com.pandulapeter.campfire.feature.main.shared.baseSongList
 
-import android.content.Context
-import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.data.model.remote.Song
 import com.pandulapeter.campfire.data.repository.PlaylistRepository
 import com.pandulapeter.campfire.data.repository.SongDetailRepository
@@ -10,7 +8,8 @@ import com.pandulapeter.campfire.feature.main.home.home.HomeItemViewModel
 sealed class SongListItemViewModel : HomeItemViewModel {
 
     data class SongViewModel(
-        private val context: Context,
+        private val newVersionText: String,
+        private val newTagText: String,
         private val songDetailRepository: SongDetailRepository,
         private val playlistRepository: PlaylistRepository,
         val song: Song,
@@ -25,8 +24,8 @@ sealed class SongListItemViewModel : HomeItemViewModel {
     ) : SongListItemViewModel() {
         val alertText
             get() = when (downloadState) {
-                DownloadState.Downloaded.Deprecated -> context.getString(R.string.new_version_available)
-                DownloadState.NotDownloaded.New -> context.getString(R.string.new_tag)
+                DownloadState.Downloaded.Deprecated -> newVersionText//context.getString(R.string.new_version_available)
+                DownloadState.NotDownloaded.New -> newTagText//context.getString(R.string.new_tag)
                 else -> null
             }
 

@@ -14,6 +14,7 @@ import com.pandulapeter.campfire.feature.shared.widget.DisableScrollLinearLayout
 import com.pandulapeter.campfire.feature.shared.widget.StateLayout
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class CollectionsFragment : TopLevelFragment<FragmentCollectionsBinding, CollectionsViewModel>(R.layout.fragment_collections) {
@@ -23,33 +24,7 @@ class CollectionsFragment : TopLevelFragment<FragmentCollectionsBinding, Collect
     private var Bundle.buttonIcon by BundleArgumentDelegate.Int("buttonIcon")
     override val shouldDelaySubscribing get() = viewModel.isDetailScreenOpen
     private lateinit var linearLayoutManager: DisableScrollLinearLayoutManager
-    override val viewModel: CollectionsViewModel by lazy {
-        CollectionsViewModel(
-            onDataLoaded = { languages ->
-                getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.collections)
-                initializeCompoundButton(R.id.sort_by_title) { viewModel.sortingMode == CollectionsViewModel.SortingMode.TITLE }
-                initializeCompoundButton(R.id.sort_by_date) { viewModel.sortingMode == CollectionsViewModel.SortingMode.UPLOAD_DATE }
-                initializeCompoundButton(R.id.sort_by_popularity) { viewModel.sortingMode == CollectionsViewModel.SortingMode.POPULARITY }
-                initializeCompoundButton(R.id.bookmarked_only) { viewModel.shouldShowSavedOnly }
-                initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
-                getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
-                    clear()
-                    languages.forEachIndexed { index, language ->
-                        add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
-                            setActionView(R.layout.widget_checkbox)
-                            initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
-                        }
-                    }
-                }
-                getCampfireActivity().updateToolbarButtons(
-                    listOf(
-                        getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
-                    ))
-            },
-            openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() },
-            newText = getString(R.string.new_tag)
-        )
-    }
+    override val viewModel by viewModel<CollectionsViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,6 +132,28 @@ class CollectionsFragment : TopLevelFragment<FragmentCollectionsBinding, Collect
             requestLayout()
         }
         getCampfireActivity().showPlayStoreRatingDialogIfNeeded()
+        viewModel.onDataLoaded = { languages ->
+            getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.collections)
+            initializeCompoundButton(R.id.sort_by_title) { viewModel.sortingMode == CollectionsViewModel.SortingMode.TITLE }
+            initializeCompoundButton(R.id.sort_by_date) { viewModel.sortingMode == CollectionsViewModel.SortingMode.UPLOAD_DATE }
+            initializeCompoundButton(R.id.sort_by_popularity) { viewModel.sortingMode == CollectionsViewModel.SortingMode.POPULARITY }
+            initializeCompoundButton(R.id.bookmarked_only) { viewModel.shouldShowSavedOnly }
+            initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
+            getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
+                clear()
+                languages.forEachIndexed { index, language ->
+                    add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
+                        setActionView(R.layout.widget_checkbox)
+                        initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
+                    }
+                }
+            }
+            getCampfireActivity().updateToolbarButtons(
+                listOf(
+                    getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
+                ))
+        }
+        viewModel.openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

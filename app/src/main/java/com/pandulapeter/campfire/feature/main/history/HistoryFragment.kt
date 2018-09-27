@@ -17,6 +17,7 @@ import com.pandulapeter.campfire.util.onPropertyChanged
 import com.pandulapeter.campfire.util.visibleOrGone
 import com.pandulapeter.campfire.util.visibleOrInvisible
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class HistoryFragment : BaseSongListFragment<HistoryViewModel>(), BaseDialogFragment.OnDialogItemSelectedListener {
 
@@ -25,7 +26,7 @@ class HistoryFragment : BaseSongListFragment<HistoryViewModel>(), BaseDialogFrag
     }
 
     private val firstTimeUserExperienceManager by inject<FirstTimeUserExperienceManager>()
-    override val viewModel by lazy { HistoryViewModel(getCampfireActivity()) { getCampfireActivity().openSongsScreen() } }
+    override val viewModel by viewModel<HistoryViewModel>()
     private val deleteAllButton by lazy {
         getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_delete_24dp) {
             AlertDialogFragment.show(
@@ -83,6 +84,7 @@ class HistoryFragment : BaseSongListFragment<HistoryViewModel>(), BaseDialogFrag
                 }
             }
         }).attachToRecyclerView(binding.recyclerView)
+        viewModel.getString = { getString(it) }
     }
 
     override fun onResume() {

@@ -28,14 +28,17 @@ import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.cancel
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.withContext
-import org.koin.android.ext.android.inject
 import java.util.*
 import kotlin.coroutines.experimental.CoroutineContext
 
 class HomeViewModel(
-    private val onDataLoaded: (languages: List<Language>) -> Unit,
-    private val openSecondaryNavigationDrawer: () -> Unit,
-    private val context: Context
+    context: Context,
+    private val analyticsManager: AnalyticsManager,
+    private val preferenceDatabase: PreferenceDatabase,
+    val collectionRepository: CollectionRepository,
+    private val songRepository: SongRepository,
+    private val songDetailRepository: SongDetailRepository,
+    private val playlistRepository: PlaylistRepository
 ) : CampfireViewModel(), CollectionRepository.Subscriber, SongRepository.Subscriber, SongDetailRepository.Subscriber, PlaylistRepository.Subscriber {
 
     companion object {
@@ -45,12 +48,6 @@ class HomeViewModel(
         const val RANDOM_SONG_COUNT = 10
     }
 
-    private val analyticsManager by inject<AnalyticsManager>()
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    val collectionRepository by inject<CollectionRepository>()
-    private val songRepository by inject<SongRepository>()
-    private val songDetailRepository by inject<SongDetailRepository>()
-    private val playlistRepository by inject<PlaylistRepository>()
     var isDetailScreenOpen = false
     private val newText = context.getString(R.string.new_tag)
     private var coroutine: CoroutineContext? = null
@@ -68,6 +65,8 @@ class HomeViewModel(
     val placeholderText = ObservableInt(R.string.home_initializing_error)
     val buttonText = ObservableInt(R.string.try_again)
     val buttonIcon = ObservableInt()
+    private val newVersionText = context.getString(R.string.new_version_available)
+    private val newTagText = context.getString(R.string.new_tag)
     private var isFirstLoadingDone = false
     var shouldShowSongOfTheDay = preferenceDatabase.shouldShowSongOfTheDay
         set(value) {
@@ -126,6 +125,9 @@ class HomeViewModel(
             }
         }
     var languages = mutableListOf<Language>()
+    lateinit var onDataLoaded: (languages: List<Language>) -> Unit
+    lateinit var openSecondaryNavigationDrawer: () -> Unit
+    lateinit var getString: (Int) -> String
 
     override fun subscribe() {
         collectionRepository.subscribe(this)
@@ -384,8 +386,16 @@ class HomeViewModel(
             }
         else null
         songOfTheDay?.also {
-            add(HomeHeaderViewModel(context.getString(R.string.home_song_of_the_day)))
-            add(SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it))
+            add(HomeHeaderViewModel(getString(R.string.home_song_of_the_day)))
+            add(
+                SongListItemViewModel.SongViewModel(
+                    newVersionText = newVersionText,
+                    newTagText = newTagText,
+                    songDetailRepository = songDetailRepository,
+                    playlistRepository = playlistRepository,
+                    song = it
+                )
+            )
         }
 
         // Add the New Collections module.
@@ -399,7 +409,7 @@ class HomeViewModel(
             .map { CollectionListItemViewModel.CollectionViewModel(it, newText) }
             .let {
                 if (it.isNotEmpty()) {
-                    add(HomeHeaderViewModel(context.getString(R.string.home_new_collections)))
+                    add(HomeHeaderViewModel(getString(R.string.home_new_collections)))
                     addAll(it)
                 }
             }
@@ -413,10 +423,18 @@ class HomeViewModel(
             .takeLast(NEW_SONG_COUNT)
             .asReversed() else listOf()
         newSongs
-            .map { SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it) }
+            .map {
+                SongListItemViewModel.SongViewModel(
+                    newVersionText = newVersionText,
+                    newTagText = newTagText,
+                    songDetailRepository = songDetailRepository,
+                    playlistRepository = playlistRepository,
+                    song = it
+                )
+            }
             .let {
                 if (it.isNotEmpty()) {
-                    add(HomeHeaderViewModel(context.getString(R.string.home_new_songs)))
+                    add(HomeHeaderViewModel(getString(R.string.home_new_songs)))
                     addAll(it)
                 }
             }
@@ -433,7 +451,7 @@ class HomeViewModel(
                     if (it.isNotEmpty()) {
                         add(
                             HomeHeaderViewModel(
-                                context.getString(R.string.home_random_collections),
+                                getString(R.string.home_random_collections),
                                 if (totalRandomCollectionCount > RANDOM_COLLECTION_COUNT) ::refreshRandomCollections else null
                             )
                         )
@@ -452,10 +470,18 @@ class HomeViewModel(
                 .apply { totalRandomSongCount = size }
                 .take(RANDOM_SONG_COUNT)
             displayedRandomSongs
-                .map { SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it) }
+                .map {
+                    SongListItemViewModel.SongViewModel(
+                        newVersionText = newVersionText,
+                        newTagText = newTagText,
+                        songDetailRepository = songDetailRepository,
+                        playlistRepository = playlistRepository,
+                        song = it
+                    )
+                }
                 .let {
                     if (it.isNotEmpty()) {
-                        add(HomeHeaderViewModel(context.getString(R.string.home_random_songs), if (totalRandomSongCount > RANDOM_SONG_COUNT) ::refreshRandomSongs else null))
+                        add(HomeHeaderViewModel(getString(R.string.home_random_songs), if (totalRandomSongCount > RANDOM_SONG_COUNT) ::refreshRandomSongs else null))
                         addAll(it)
                     }
                 }

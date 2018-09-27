@@ -11,18 +11,19 @@ import com.pandulapeter.campfire.data.repository.SongRepository
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.feature.shared.widget.StateLayout
 import com.pandulapeter.campfire.util.onPropertyChanged
-import org.koin.android.ext.android.inject
 
-class ContentLanguageViewModel(private val onLanguagesLoaded: (List<Language>) -> Unit) : CampfireViewModel(), CollectionRepository.Subscriber, SongRepository.Subscriber {
+class ContentLanguageViewModel(
+    private val preferenceDatabase: PreferenceDatabase,
+    private val collectionRepository: CollectionRepository,
+    private val songRepository: SongRepository
+) : CampfireViewModel(), CollectionRepository.Subscriber, SongRepository.Subscriber {
 
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    private val collectionRepository by inject<CollectionRepository>()
-    private val songRepository by inject<SongRepository>()
     private var areCollectionsLoading = true
     private var areSongsLoading = true
     val state = ObservableField<StateLayout.State>(StateLayout.State.LOADING)
     val shouldShowError = ObservableBoolean()
     val shouldShowExplicit = ObservableBoolean(preferenceDatabase.shouldShowExplicit)
+    lateinit var onLanguagesLoaded: (List<Language>) -> Unit
 
     init {
         shouldShowExplicit.onPropertyChanged { preferenceDatabase.shouldShowExplicit = it }

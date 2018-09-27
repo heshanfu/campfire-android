@@ -24,17 +24,18 @@ import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.cancel
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.withContext
-import org.koin.android.ext.android.inject
 import kotlin.coroutines.experimental.CoroutineContext
 
-abstract class BaseSongListViewModel(protected val context: Context) : CampfireViewModel(), SongRepository.Subscriber, SongDetailRepository.Subscriber,
+abstract class BaseSongListViewModel(
+    context: Context,
+    protected val songRepository: SongRepository,
+    protected val songDetailRepository: SongDetailRepository,
+    protected val preferenceDatabase: PreferenceDatabase,
+    protected val playlistRepository: PlaylistRepository,
+    protected val analyticsManager: AnalyticsManager
+) : CampfireViewModel(), SongRepository.Subscriber, SongDetailRepository.Subscriber,
     PlaylistRepository.Subscriber {
 
-    protected val songRepository by inject<SongRepository>()
-    protected val songDetailRepository by inject<SongDetailRepository>()
-    protected val preferenceDatabase by inject<PreferenceDatabase>()
-    protected val playlistRepository by inject<PlaylistRepository>()
-    private val analyticsManager by inject<AnalyticsManager>()
     abstract val screenName: String
     private var coroutine: CoroutineContext? = null
     protected var songs = sequenceOf<Song>()
@@ -48,8 +49,11 @@ abstract class BaseSongListViewModel(protected val context: Context) : CampfireV
     val buttonText = ObservableInt(R.string.try_again)
     val buttonIcon = ObservableInt()
     var isDetailScreenOpen = false
+    protected val newVersionText: String = context.getString(R.string.new_version_available)
+    protected val newTagText: String = context.getString(R.string.new_tag)
     open val cardTransitionName = ""
     open val imageTransitionName = ""
+    lateinit var openSongs: () -> Unit
 
     @CallSuper
     override fun subscribe() {

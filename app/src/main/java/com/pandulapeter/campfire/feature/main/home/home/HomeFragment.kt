@@ -22,6 +22,7 @@ import com.pandulapeter.campfire.feature.shared.widget.DisableScrollLinearLayout
 import com.pandulapeter.campfire.feature.shared.widget.StateLayout
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class HomeFragment : CampfireFragment<FragmentHomeBinding, HomeViewModel>(R.layout.fragment_home) {
 
@@ -40,34 +41,7 @@ class HomeFragment : CampfireFragment<FragmentHomeBinding, HomeViewModel>(R.layo
     private var Bundle.randomCollections by BundleArgumentDelegate.ParcelableArrayList<Collection>("randomCollections")
     private var Bundle.randomSongs by BundleArgumentDelegate.ParcelableArrayList<Song>("randomSongs")
     override val shouldDelaySubscribing get() = viewModel.isDetailScreenOpen
-    override val viewModel: HomeViewModel by lazy {
-        HomeViewModel(
-            onDataLoaded = { languages ->
-                getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.home)
-                initializeCompoundButton(R.id.song_of_the_day) { viewModel.shouldShowSongOfTheDay }
-                initializeCompoundButton(R.id.new_collections) { viewModel.shouldShowNewCollections }
-                initializeCompoundButton(R.id.new_songs) { viewModel.shouldShowNewSongs }
-                initializeCompoundButton(R.id.random_collections) { viewModel.shouldShowRandomCollections }
-                initializeCompoundButton(R.id.random_songs) { viewModel.shouldShowRandomSongs }
-                initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
-                getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
-                    clear()
-                    languages.forEachIndexed { index, language ->
-                        add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
-                            setActionView(R.layout.widget_checkbox)
-                            initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
-                        }
-                    }
-                }
-                getCampfireActivity().updateToolbarButtons(
-                    listOf(
-                        getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
-                    ))
-            },
-            openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() },
-            context = getCampfireActivity()
-        )
-    }
+    override val viewModel by viewModel<HomeViewModel>()
     private lateinit var linearLayoutManager: DisableScrollLinearLayoutManager
     private var wasLastTransitionForACollection = false
 
@@ -90,7 +64,7 @@ class HomeFragment : CampfireFragment<FragmentHomeBinding, HomeViewModel>(R.layo
                     index = viewModel.adapter.items.indexOfFirst { it is SongListItemViewModel.SongViewModel && it.song.id == getCampfireActivity().lastSongId }
                     if (index != RecyclerView.NO_POSITION) {
                         (binding.recyclerView.findViewHolderForAdapterPosition(index)
-                                ?: binding.recyclerView.findViewHolderForAdapterPosition(linearLayoutManager.findLastVisibleItemPosition()))?.let {
+                            ?: binding.recyclerView.findViewHolderForAdapterPosition(linearLayoutManager.findLastVisibleItemPosition()))?.let {
                             sharedElements[names[0]] = it.itemView
                         }
                     }
@@ -100,6 +74,30 @@ class HomeFragment : CampfireFragment<FragmentHomeBinding, HomeViewModel>(R.layo
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.onDataLoaded = { languages ->
+            getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.home)
+            initializeCompoundButton(R.id.song_of_the_day) { viewModel.shouldShowSongOfTheDay }
+            initializeCompoundButton(R.id.new_collections) { viewModel.shouldShowNewCollections }
+            initializeCompoundButton(R.id.new_songs) { viewModel.shouldShowNewSongs }
+            initializeCompoundButton(R.id.random_collections) { viewModel.shouldShowRandomCollections }
+            initializeCompoundButton(R.id.random_songs) { viewModel.shouldShowRandomSongs }
+            initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
+            getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
+                clear()
+                languages.forEachIndexed { index, language ->
+                    add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
+                        setActionView(R.layout.widget_checkbox)
+                        initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
+                    }
+                }
+            }
+            getCampfireActivity().updateToolbarButtons(
+                listOf(
+                    getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
+                ))
+        }
+        viewModel.openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() }
+        viewModel.getString = { getString(it) }
         if (arguments?.shouldAnimate == true) {
             arguments?.shouldAnimate = false
             view.alpha = 0f

@@ -14,13 +14,14 @@ import com.pandulapeter.campfire.feature.main.options.preferences.ThemeSelectorB
 import com.pandulapeter.campfire.util.obtainColor
 import com.pandulapeter.campfire.util.onEventTriggered
 import com.pandulapeter.campfire.util.onPropertyChanged
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class WelcomeFragment : OnboardingPageFragment<FragmentOnboardingWelcomeBinding, WelcomeViewModel>(R.layout.fragment_onboarding_welcome),
     ThemeSelectorBottomSheetFragment.OnThemeSelectedListener,
     LanguageSelectorBottomSheetFragment.OnLanguageSelectedListener {
 
-    override val viewModel = WelcomeViewModel()
+    override val viewModel by viewModel<WelcomeViewModel>()
     private val languageText by lazy { getString(R.string.welcome_language) }
     private val themeText by lazy { getString(R.string.welcome_theme) }
     private val secondaryTextColor by lazy { getCampfireActivity().obtainColor(android.R.attr.textColorSecondary) }

@@ -10,14 +10,14 @@ import com.pandulapeter.campfire.feature.CampfireActivity
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.feature.shared.widget.StateLayout
 import com.pandulapeter.campfire.integration.AppShortcutManager
-import org.koin.android.ext.android.inject
 import java.util.*
 
-class ManagePlaylistsViewModel : CampfireViewModel(), PlaylistRepository.Subscriber {
+class ManagePlaylistsViewModel(
+    private val playlistRepository: PlaylistRepository,
+    private val appShortcutManager: AppShortcutManager,
+    preferenceDatabase: PreferenceDatabase
+) : CampfireViewModel(), PlaylistRepository.Subscriber {
 
-    private val playlistRepository by inject<PlaylistRepository>()
-    private val appShortcutManager by inject<AppShortcutManager>()
-    private val preferenceDatabase by inject<PreferenceDatabase>()
     private var playlistToDeleteId: String? = null
         set(value) {
             field = value

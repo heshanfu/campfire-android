@@ -36,7 +36,7 @@ abstract class BaseSongListFragment<out VM : BaseSongListViewModel> : TopLevelFr
                 val index = viewModel.adapter.items.indexOfFirst { it is SongListItemViewModel.SongViewModel && it.song.id == getCampfireActivity().lastSongId }
                 if (index != RecyclerView.NO_POSITION) {
                     (binding.recyclerView.findViewHolderForAdapterPosition(index)
-                            ?: binding.recyclerView.findViewHolderForAdapterPosition(linearLayoutManager.findLastVisibleItemPosition()))?.let {
+                        ?: binding.recyclerView.findViewHolderForAdapterPosition(linearLayoutManager.findLastVisibleItemPosition()))?.let {
                         sharedElements[names[0]] = it.itemView
                         getCampfireActivity().lastSongId = ""
                     }
@@ -179,6 +179,7 @@ abstract class BaseSongListFragment<out VM : BaseSongListViewModel> : TopLevelFr
             })
             requestLayout()
         }
+        viewModel.openSongs = { getCampfireActivity().openSongsScreen() }
     }
 
     override fun onBackPressed() = !linearLayoutManager.isScrollEnabled

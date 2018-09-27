@@ -1,8 +1,10 @@
 package com.pandulapeter.campfire.feature.detail.page
 
+import android.content.Context
 import android.databinding.ObservableField
 import android.databinding.ObservableFloat
 import android.databinding.ObservableInt
+import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.data.model.local.SongDetailMetadata
 import com.pandulapeter.campfire.data.model.remote.Song
 import com.pandulapeter.campfire.data.model.remote.SongDetail
@@ -13,29 +15,36 @@ import com.pandulapeter.campfire.feature.detail.page.parsing.SongParser
 import com.pandulapeter.campfire.feature.shared.CampfireViewModel
 import com.pandulapeter.campfire.feature.shared.widget.StateLayout
 import com.pandulapeter.campfire.integration.AnalyticsManager
+import com.pandulapeter.campfire.util.dimension
 import com.pandulapeter.campfire.util.onPropertyChanged
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.withContext
-import org.koin.android.ext.android.inject
 
 class DetailPageViewModel(
-    val song: Song,
-    private val initialTextSize: Int,
-    private val songParser: SongParser,
-    private val onDataLoaded: () -> Unit
+    context: Context,
+    private val songDetailRepository: SongDetailRepository,
+    private val preferenceDatabase: PreferenceDatabase,
+    private val detailPageEventBus: DetailPageEventBus,
+    private val analyticsManager: AnalyticsManager,
+    private val songParser: SongParser
 ) : CampfireViewModel(), SongDetailRepository.Subscriber {
 
-    private val songDetailRepository by inject<SongDetailRepository>()
-    private val preferenceDatabase by inject<PreferenceDatabase>()
-    private val detailPageEventBus by inject<DetailPageEventBus>()
-    private val analyticsManager by inject<AnalyticsManager>()
+    private var initialTextSize = context.dimension(R.dimen.text_normal)
     private var rawText = ""
     val text = ObservableField<CharSequence>("")
     val state = ObservableField<StateLayout.State>(StateLayout.State.LOADING)
     val textSize = ObservableFloat(preferenceDatabase.fontSize * initialTextSize)
-    val transposition = ObservableInt(preferenceDatabase.getTransposition(song.id))
+    val transposition = ObservableInt()
+    var song: Song? = null
+        set(value) {
+            field = value
+            if (value != null) {
+                transposition.set(preferenceDatabase.getTransposition(value.id))
+            }
+        }
+    lateinit var onDataLoaded: () -> Unit
 
     init {
         transposition.onPropertyChanged {
@@ -50,9 +59,11 @@ class DetailPageViewModel(
                 transposition.set(modifiedValue)
             } else {
                 refreshText()
-                analyticsManager.onTranspositionChanged(song.id, modifiedValue)
-                preferenceDatabase.setTransposition(song.id, modifiedValue)
-                detailPageEventBus.notifyTranspositionChanged(song.id, modifiedValue)
+                song?.let { song ->
+                    analyticsManager.onTranspositionChanged(song.id, modifiedValue)
+                    preferenceDatabase.setTransposition(song.id, modifiedValue)
+                    detailPageEventBus.notifyTranspositionChanged(song.id, modifiedValue)
+                }
             }
         }
     }
@@ -69,30 +80,36 @@ class DetailPageViewModel(
     override fun onSongDetailRepositoryUpdated(downloadedSongs: List<SongDetailMetadata>) = Unit
 
     override fun onSongDetailRepositoryDownloadSuccess(songDetail: SongDetail) {
-        if (songDetail.id == song.id) {
-            rawText = songDetail.text
-            refreshText {
-                state.set(StateLayout.State.NORMAL)
-                onDataLoaded()
-                detailPageEventBus.notifyTranspositionChanged(song.id, transposition.get())
+        song?.let { song ->
+            if (songDetail.id == song.id) {
+                rawText = songDetail.text
+                refreshText {
+                    state.set(StateLayout.State.NORMAL)
+                    onDataLoaded()
+                    detailPageEventBus.notifyTranspositionChanged(song.id, transposition.get())
+                }
             }
         }
     }
 
     override fun onSongDetailRepositoryDownloadQueueChanged(songIds: List<String>) {
-        if (songIds.contains(song.id) && text.get().isNullOrEmpty()) {
-            state.set(StateLayout.State.LOADING)
+        song?.let { song ->
+            if (songIds.contains(song.id) && text.get().isNullOrEmpty()) {
+                state.set(StateLayout.State.LOADING)
+            }
         }
     }
 
     override fun onSongDetailRepositoryDownloadError(song: Song) {
-        if (song.id == this.song.id && text.get().isNullOrEmpty()) {
+        if (song.id == this.song?.id && text.get().isNullOrEmpty()) {
             analyticsManager.onConnectionError(true, song.id)
             state.set(StateLayout.State.ERROR)
         }
     }
 
-    fun loadData() = songDetailRepository.getSongDetail(song)
+    fun loadData() {
+        song?.let { song -> songDetailRepository.getSongDetail(song) }
+    }
 
     fun updateTextSize() = textSize.set(preferenceDatabase.fontSize * initialTextSize)
 

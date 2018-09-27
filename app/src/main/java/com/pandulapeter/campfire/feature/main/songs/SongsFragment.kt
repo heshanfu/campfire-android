@@ -18,6 +18,7 @@ import com.pandulapeter.campfire.feature.shared.widget.ToolbarButton
 import com.pandulapeter.campfire.feature.shared.widget.ToolbarTextInputView
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import com.pandulapeter.campfire.util.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class SongsFragment : BaseSongListFragment<SongsViewModel>() {
@@ -26,55 +27,7 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
         private const val COMPOUND_BUTTON_LONG_TRANSITION_DELAY = 300L
     }
 
-    override val viewModel: SongsViewModel by lazy {
-        SongsViewModel(
-            context = getCampfireActivity(),
-            toolbarTextInputView = ToolbarTextInputView(
-                getCampfireActivity().toolbarContext,
-                R.string.songs_search,
-                true
-            ).apply { title.updateToolbarTitle(R.string.main_songs) },
-            updateSearchToggleDrawable = {
-                searchToggle.setImageDrawable((if (it) drawableSearchToClose else drawableCloseToSearch).apply { (this as? AnimatedVectorDrawableCompat)?.start() })
-                getCampfireActivity().transitionMode = true
-                binding.swipeRefreshLayout.isEnabled = !it
-                binding.swipeRefreshLayout.isRefreshing = viewModel.isLoading.get()
-                binding.root.post {
-                    if (isAdded) {
-                        searchControlsViewModel.isVisible.set(it)
-                    }
-                }
-            },
-            onDataLoaded = { languages ->
-                getCampfireActivity().updateAppBarView(searchControlsBinding.root)
-                getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.songs)
-                initializeCompoundButton(R.id.downloaded_only) { viewModel.shouldShowDownloadedOnly }
-                initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
-                initializeCompoundButton(R.id.sort_by_title) { viewModel.sortingMode == SongsViewModel.SortingMode.TITLE }
-                initializeCompoundButton(R.id.sort_by_artist) { viewModel.sortingMode == SongsViewModel.SortingMode.ARTIST }
-                initializeCompoundButton(R.id.sort_by_popularity) { viewModel.sortingMode == SongsViewModel.SortingMode.POPULARITY }
-                getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
-                    clear()
-                    languages.forEachIndexed { index, language ->
-                        add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
-                            setActionView(R.layout.widget_checkbox)
-                            initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
-                        }
-                    }
-                }
-                getCampfireActivity().toolbarContext.let { context ->
-                    getCampfireActivity().updateToolbarButtons(
-                        listOf(
-                            eraseButton,
-                            searchToggle,
-                            context.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
-                        ))
-                }
-            },
-            openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() },
-            setFastScrollEnabled = { binding.recyclerView.setFastScrollEnabled(it) }
-        )
-    }
+    override val viewModel by viewModel<SongsViewModel>()
     private var Bundle.isTextInputVisible by BundleArgumentDelegate.Boolean("isTextInputVisible")
     private var Bundle.searchQuery by BundleArgumentDelegate.String("searchQuery")
     private var Bundle.placeholderText by BundleArgumentDelegate.Int("placeholderText")
@@ -89,7 +42,7 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
     }
     private val eraseButton: ToolbarButton by lazy {
         getCampfireActivity().toolbarContext.createToolbarButton(R.drawable.ic_eraser_24dp) {
-            viewModel.toolbarTextInputView.textInput.setText("")
+            viewModel.toolbarTextInputView?.textInput?.setText("")
         }.apply {
             scaleX = 0f
             scaleY = 0f
@@ -103,7 +56,7 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
     private val drawableSearchToClose by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) getCampfireActivity().animatedDrawable(R.drawable.avd_search_to_close_24dp) else getCampfireActivity().drawable(R.drawable.ic_close_24dp)
     }
-    private val searchControlsViewModel = SearchControlsViewModel()
+    private val searchControlsViewModel by viewModel<SearchControlsViewModel>()
     private val searchControlsBinding by lazy {
         DataBindingUtil.inflate<ViewSearchControlsBinding>(LayoutInflater.from(getCampfireActivity().toolbarContext), R.layout.view_search_controls, null, false).apply {
             viewModel = searchControlsViewModel
@@ -114,6 +67,11 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         analyticsManager.onTopLevelScreenOpened(AnalyticsManager.PARAM_VALUE_SCREEN_SONGS)
+        viewModel.toolbarTextInputView = ToolbarTextInputView(
+            getCampfireActivity().toolbarContext,
+            R.string.songs_search,
+            true
+        ).apply { title.updateToolbarTitle(R.string.main_songs) }
         viewModel.shouldShowEraseButton.onPropertyChanged { eraseButton.animate().scaleX(if (it) 1f else 0f).scaleY(if (it) 1f else 0f).start() }
         viewModel.shouldEnableEraseButton.onPropertyChanged {
             eraseButton.animate().alpha(if (it) 1f else 0.5f).start()
@@ -123,12 +81,12 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
             searchControlsViewModel.isVisible.set(savedInstanceState.isTextInputVisible)
             if (it.isTextInputVisible) {
                 searchToggle.setImageDrawable(getCampfireActivity().drawable(R.drawable.ic_close_24dp))
-                viewModel.toolbarTextInputView.textInput.run {
+                viewModel.toolbarTextInputView?.textInput?.run {
                     setText(savedInstanceState.searchQuery)
                     setSelection(text.length)
                     viewModel.query = text.toString()
                 }
-                viewModel.toolbarTextInputView.showTextInput()
+                viewModel.toolbarTextInputView?.showTextInput()
             }
             viewModel.placeholderText.set(savedInstanceState.placeholderText)
             viewModel.buttonText.set(savedInstanceState.buttonText)
@@ -136,7 +94,7 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
             viewModel.shouldShowEraseButton.set(savedInstanceState.isEraseButtonVisible)
             viewModel.shouldEnableEraseButton.set(savedInstanceState.isEraseButtonEnabled)
         }
-        viewModel.toolbarTextInputView.textInput.requestFocus()
+        viewModel.toolbarTextInputView?.textInput?.requestFocus()
         searchControlsViewModel.searchInTitles.onPropertyChanged(this) {
             binding.root.postDelayed(
                 { if (isAdded) viewModel.shouldSearchInTitles = it },
@@ -149,6 +107,45 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
                 COMPOUND_BUTTON_LONG_TRANSITION_DELAY
             )
         }
+        viewModel.updateSearchToggleDrawable = {
+            searchToggle.setImageDrawable((if (it) drawableSearchToClose else drawableCloseToSearch).apply { (this as? AnimatedVectorDrawableCompat)?.start() })
+            getCampfireActivity().transitionMode = true
+            binding.swipeRefreshLayout.isEnabled = !it
+            binding.swipeRefreshLayout.isRefreshing = viewModel.isLoading.get()
+            binding.root.post {
+                if (isAdded) {
+                    searchControlsViewModel.isVisible.set(it)
+                }
+            }
+        }
+        viewModel.onDataLoaded = { languages ->
+            getCampfireActivity().updateAppBarView(searchControlsBinding.root)
+            getCampfireActivity().enableSecondaryNavigationDrawer(R.menu.songs)
+            initializeCompoundButton(R.id.downloaded_only) { viewModel.shouldShowDownloadedOnly }
+            initializeCompoundButton(R.id.show_explicit) { viewModel.shouldShowExplicit }
+            initializeCompoundButton(R.id.sort_by_title) { viewModel.sortingMode == SongsViewModel.SortingMode.TITLE }
+            initializeCompoundButton(R.id.sort_by_artist) { viewModel.sortingMode == SongsViewModel.SortingMode.ARTIST }
+            initializeCompoundButton(R.id.sort_by_popularity) { viewModel.sortingMode == SongsViewModel.SortingMode.POPULARITY }
+            getCampfireActivity().secondaryNavigationMenu.findItem(R.id.filter_by_language).subMenu.run {
+                clear()
+                languages.forEachIndexed { index, language ->
+                    add(R.id.language_container, language.nameResource, index, language.nameResource).apply {
+                        setActionView(R.layout.widget_checkbox)
+                        initializeCompoundButton(language.nameResource) { !viewModel.disabledLanguageFilters.contains(language.id) }
+                    }
+                }
+            }
+            getCampfireActivity().toolbarContext.let { context ->
+                getCampfireActivity().updateToolbarButtons(
+                    listOf(
+                        eraseButton,
+                        searchToggle,
+                        context.createToolbarButton(R.drawable.ic_filter_and_sort_24dp) { getCampfireActivity().openSecondaryNavigationDrawer() }
+                    ))
+            }
+        }
+        viewModel.openSecondaryNavigationDrawer = { getCampfireActivity().openSecondaryNavigationDrawer() }
+        viewModel.setFastScrollEnabled = { binding.recyclerView.setFastScrollEnabled(it) }
         getCampfireActivity().showPlayStoreRatingDialogIfNeeded()
     }
 
@@ -159,12 +156,12 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
 
     override fun onPause() {
         super.onPause()
-        toolbarWidth = viewModel.toolbarTextInputView.width
+        toolbarWidth = viewModel.toolbarTextInputView?.width ?: 0
     }
 
     override fun onSaveInstanceState(outState: Bundle) = outState.run {
         super.onSaveInstanceState(this)
-        isTextInputVisible = viewModel.toolbarTextInputView.isTextInputVisible
+        isTextInputVisible = viewModel.toolbarTextInputView?.isTextInputVisible == true
         searchQuery = viewModel.query
         placeholderText = viewModel.placeholderText.get()
         buttonText = viewModel.buttonText.get()
@@ -199,15 +196,15 @@ class SongsFragment : BaseSongListFragment<SongsViewModel>() {
         }
     }
 
-    override fun inflateToolbarTitle(context: Context) = viewModel.toolbarTextInputView
+    override fun inflateToolbarTitle(context: Context) = viewModel.toolbarTextInputView!!
 
-    override fun onBackPressed() = if (viewModel.toolbarTextInputView.isTextInputVisible) {
+    override fun onBackPressed() = if (viewModel.toolbarTextInputView?.isTextInputVisible == true) {
         viewModel.toggleTextInputVisibility()
         true
     } else super.onBackPressed()
 
     override fun onDetailScreenOpened() {
-        if (viewModel.toolbarTextInputView.isTextInputVisible && viewModel.query.trim().isEmpty()) {
+        if (viewModel.toolbarTextInputView?.isTextInputVisible == true && viewModel.query.trim().isEmpty()) {
             viewModel.toggleTextInputVisibility()
         }
     }

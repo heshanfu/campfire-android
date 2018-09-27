@@ -16,10 +16,11 @@ import com.pandulapeter.campfire.feature.shared.TopLevelFragment
 import com.pandulapeter.campfire.integration.AnalyticsManager
 import io.fabric.sdk.android.Fabric
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class HomeContainerFragment : TopLevelFragment<FragmentHomeContainerBinding, HomeContainerViewModel>(R.layout.fragment_home_container) {
 
-    override val viewModel = HomeContainerViewModel()
+    override val viewModel by viewModel<HomeContainerViewModel>()
     override val shouldShowAppBar get() = preferenceDatabase.isOnboardingDone
     private val preferenceDatabase by inject<PreferenceDatabase>()
     private val currentFragment get() = childFragmentManager.findFragmentById(R.id.home_container)

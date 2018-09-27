@@ -5,17 +5,34 @@ import android.databinding.ObservableBoolean
 import com.pandulapeter.campfire.R
 import com.pandulapeter.campfire.data.model.local.HistoryItem
 import com.pandulapeter.campfire.data.model.remote.Song
+import com.pandulapeter.campfire.data.persistence.PreferenceDatabase
 import com.pandulapeter.campfire.data.repository.HistoryRepository
+import com.pandulapeter.campfire.data.repository.PlaylistRepository
+import com.pandulapeter.campfire.data.repository.SongDetailRepository
+import com.pandulapeter.campfire.data.repository.SongRepository
 import com.pandulapeter.campfire.feature.CampfireActivity
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.BaseSongListViewModel
 import com.pandulapeter.campfire.feature.main.shared.baseSongList.SongListItemViewModel
 import com.pandulapeter.campfire.integration.AnalyticsManager
-import org.koin.android.ext.android.inject
 import java.util.*
 
-class HistoryViewModel(context: Context, private val openSongs: () -> Unit) : BaseSongListViewModel(context), HistoryRepository.Subscriber {
+class HistoryViewModel(
+    context: Context,
+    songRepository: SongRepository,
+    songDetailRepository: SongDetailRepository,
+    preferenceDatabase: PreferenceDatabase,
+    playlistRepository: PlaylistRepository,
+    analyticsManager: AnalyticsManager,
+    private val historyRepository: HistoryRepository
+) : BaseSongListViewModel(
+    context,
+    songRepository,
+    songDetailRepository,
+    preferenceDatabase,
+    playlistRepository,
+    analyticsManager
+), HistoryRepository.Subscriber {
 
-    private val historyRepository by inject<HistoryRepository>()
     val shouldShowDeleteAll = ObservableBoolean()
     private var songToDeleteId: String? = null
     private var history = listOf<HistoryItem>()
@@ -24,6 +41,7 @@ class HistoryViewModel(context: Context, private val openSongs: () -> Unit) : Ba
     private val Calendar.week get() = get(Calendar.WEEK_OF_YEAR)
     private val Calendar.day get() = get(Calendar.DAY_OF_YEAR)
     override val screenName = AnalyticsManager.PARAM_VALUE_SCREEN_HISTORY
+    lateinit var getString: (Int) -> String
 
     init {
         placeholderText.set(R.string.history_placeholder)
@@ -47,7 +65,15 @@ class HistoryViewModel(context: Context, private val openSongs: () -> Unit) : Ba
     override fun Sequence<Song>.createViewModels() = filter { it.id != songToDeleteId }
         .filter { song -> history.firstOrNull { it.id == song.id } != null }
         .sortedByDescending { song -> history.first { it.id == song.id }.lastOpenedAt }
-        .map { SongListItemViewModel.SongViewModel(context, songDetailRepository, playlistRepository, it) }
+        .map {
+            SongListItemViewModel.SongViewModel(
+                newVersionText = newVersionText,
+                newTagText = newTagText,
+                songDetailRepository = songDetailRepository,
+                playlistRepository = playlistRepository,
+                song = it
+            )
+        }
         .toMutableList<SongListItemViewModel>()
         .apply {
             val headerIndices = mutableListOf<Int>()
@@ -59,7 +85,7 @@ class HistoryViewModel(context: Context, private val openSongs: () -> Unit) : Ba
             }
             (headerIndices.size - 1 downTo 0).forEach { position ->
                 val index = headerIndices[position]
-                add(index, SongListItemViewModel.HeaderViewModel(context.getString(getHeaderTitle(index, songsOnly))))
+                add(index, SongListItemViewModel.HeaderViewModel(getString(getHeaderTitle(index, songsOnly))))
             }
         }
 

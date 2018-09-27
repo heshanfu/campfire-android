@@ -16,6 +16,7 @@ import com.pandulapeter.campfire.util.addPageScrollListener
 import com.pandulapeter.campfire.util.color
 import com.pandulapeter.campfire.util.onEventTriggered
 import com.pandulapeter.campfire.util.waitForPreDraw
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class OnboardingFragment : CampfireFragment<FragmentOnboardingBinding, OnboardingViewModel>(R.layout.fragment_onboarding) {
 
@@ -24,13 +25,15 @@ class OnboardingFragment : CampfireFragment<FragmentOnboardingBinding, Onboardin
         exitTransition = Fade()
     }
 
-    override val viewModel = OnboardingViewModel(::navigateToHome) {
-        if (binding.viewPager.currentItem + 1 < binding.viewPager.adapter?.count ?: 0) {
-            binding.viewPager.setCurrentItem(binding.viewPager.currentItem + 1, true)
-        }
-    }
+    override val viewModel by viewModel<OnboardingViewModel>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.skip = ::navigateToHome
+        viewModel.navigateToNextPage = {
+            if (binding.viewPager.currentItem + 1 < binding.viewPager.adapter?.count ?: 0) {
+                binding.viewPager.setCurrentItem(binding.viewPager.currentItem + 1, true)
+            }
+        }
         binding.root.apply {
             waitForPreDraw {
                 if (isAdded) {
