@@ -113,7 +113,6 @@ class HomeFragment : CampfireFragment<FragmentHomeBinding, HomeViewModel>(R.layo
                     }
                     .start()
                 getCampfireActivity().onScreenChanged()
-                getCampfireActivity().openNavigationDrawer()
                 false
             }
         }
