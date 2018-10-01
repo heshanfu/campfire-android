@@ -17,11 +17,12 @@ class DetailViewModel(
 
     init {
         songId.onPropertyChanged { updatePlaylistIconState() }
+        playlistRepository.subscribe(this)
     }
 
-    override fun subscribe() = playlistRepository.subscribe(this)
-
-    override fun unsubscribe() = playlistRepository.unsubscribe(this)
+    override fun onCleared() {
+        playlistRepository.unsubscribe(this)
+    }
 
     override fun onPlaylistsUpdated(playlists: List<Playlist>) = updatePlaylistIconState()
 

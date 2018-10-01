@@ -27,14 +27,11 @@ class ContentLanguageViewModel(
 
     init {
         shouldShowExplicit.onPropertyChanged { preferenceDatabase.shouldShowExplicit = it }
-    }
-
-    override fun subscribe() {
         collectionRepository.subscribe(this)
         songRepository.subscribe(this)
     }
 
-    override fun unsubscribe() {
+    override fun onCleared() {
         collectionRepository.unsubscribe(this)
         songRepository.unsubscribe(this)
     }

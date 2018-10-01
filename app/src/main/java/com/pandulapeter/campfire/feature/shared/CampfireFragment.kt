@@ -120,7 +120,6 @@ abstract class CampfireFragment<B : ViewDataBinding, out VM : CampfireViewModel>
         super.onStop()
         isResumingDelayed = false
         snackbar?.dismiss()
-        viewModel.unsubscribe()
     }
 
     override fun setReenterTransition(transition: Any?) {
@@ -131,8 +130,7 @@ abstract class CampfireFragment<B : ViewDataBinding, out VM : CampfireViewModel>
         }
     }
 
-    @CallSuper
-    open fun updateUI() = viewModel.subscribe()
+    open fun updateUI() = Unit
 
     open fun onBackPressed() = false
 

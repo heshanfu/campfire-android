@@ -79,14 +79,14 @@ class CollectionsViewModel(
 
     init {
         preferenceDatabase.lastScreen = CampfireActivity.SCREEN_COLLECTIONS
-    }
-
-    override fun subscribe() {
         collectionRepository.subscribe(this)
         isDetailScreenOpen = false
     }
 
-    override fun unsubscribe() = collectionRepository.unsubscribe(this)
+    override fun onCleared() {
+        super.onCleared()
+        collectionRepository.unsubscribe(this)
+    }
 
     override fun onCollectionsUpdated(data: List<Collection>) {
         collections = data.asSequence()

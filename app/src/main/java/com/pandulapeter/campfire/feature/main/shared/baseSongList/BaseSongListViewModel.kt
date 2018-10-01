@@ -55,8 +55,7 @@ abstract class BaseSongListViewModel(
     open val imageTransitionName = ""
     lateinit var openSongs: () -> Unit
 
-    @CallSuper
-    override fun subscribe() {
+    init {
         songRepository.subscribe(this)
         songDetailRepository.subscribe(this)
         playlistRepository.subscribe(this)
@@ -64,7 +63,7 @@ abstract class BaseSongListViewModel(
     }
 
     @CallSuper
-    override fun unsubscribe() {
+    override fun onCleared() {
         songRepository.unsubscribe(this)
         songDetailRepository.unsubscribe(this)
         playlistRepository.unsubscribe(this)

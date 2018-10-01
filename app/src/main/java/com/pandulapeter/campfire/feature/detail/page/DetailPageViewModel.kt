@@ -66,16 +66,13 @@ class DetailPageViewModel(
                 }
             }
         }
-    }
-
-    override fun subscribe() {
         songDetailRepository.subscribe(this)
-        if (text.get().isNullOrEmpty()) {
-            loadData()
-        }
+        loadData()
     }
 
-    override fun unsubscribe() = songDetailRepository.unsubscribe(this)
+    override fun onCleared() {
+        songDetailRepository.unsubscribe(this)
+    }
 
     override fun onSongDetailRepositoryUpdated(downloadedSongs: List<SongDetailMetadata>) = Unit
 

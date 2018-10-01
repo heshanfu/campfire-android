@@ -48,15 +48,11 @@ class HistoryViewModel(
         buttonText.set(R.string.go_to_songs)
         buttonIcon.set(R.drawable.ic_songs_24dp)
         preferenceDatabase.lastScreen = CampfireActivity.SCREEN_HISTORY
-    }
-
-    override fun subscribe() {
-        super.subscribe()
         historyRepository.subscribe(this)
     }
 
-    override fun unsubscribe() {
-        super.unsubscribe()
+    override fun onCleared() {
+        super.onCleared()
         historyRepository.unsubscribe(this)
     }
 

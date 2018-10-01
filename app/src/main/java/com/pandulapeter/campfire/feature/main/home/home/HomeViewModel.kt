@@ -129,7 +129,7 @@ class HomeViewModel(
     lateinit var openSecondaryNavigationDrawer: () -> Unit
     lateinit var getString: (Int) -> String
 
-    override fun subscribe() {
+    init {
         collectionRepository.subscribe(this)
         songRepository.subscribe(this)
         songDetailRepository.subscribe(this)
@@ -137,7 +137,7 @@ class HomeViewModel(
         isDetailScreenOpen = false
     }
 
-    override fun unsubscribe() {
+    override fun onCleared() {
         songRepository.unsubscribe(this)
         collectionRepository.unsubscribe(this)
         songDetailRepository.unsubscribe(this)
